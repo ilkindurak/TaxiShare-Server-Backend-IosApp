@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd">
+
+    <bean id="passthruCredMatcher"
+          class="org.apache.shiro.authc.credential.AllowAllCredentialsMatcher"/>
+    <bean id="generalAuth" class="com.bitirme.taksishare.security.GeneralAuthFilter">
+        <property name="loginUrl" value="/login"/>
+    </bean>
+
+    <context:component-scan base-package="com.bitirme.taksishare">
+        <context:exclude-filter type="aspectj" expression="com.bitirme.taksisharemvc.mvc.*"/>
+    </context:component-scan>
+
+    <bean id="dataSource"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://127.0.0.1:3306/taxishare"/>
+        <property name="username" value="root"/>
+        <property name="password" value="0036fikricanc0036"/>
+    </bean>
+
+    <bean id="dbi" class="org.skife.jdbi.v2.DBI">
+        <constructor-arg ref="dataSource"/>
+    </bean>
+
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="shiroSecurityManager"/>
+        <property name="filterChainDefinitions">
+            <value>
+                /users/login = anon
+                /users/signup = anon
+                /** = generalAuth
+            </value>
+        </property>
+    </bean>
+
+    <bean id="shiroSecurityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="realm">
+            <bean class="com.bitirme.taksishare.security.HeaderTokenRealm"/>
+        </property>
+        <property name="sessionManager">
+            <bean class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+                <property name="sessionDAO">
+                    <bean class="org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO"/>
+                </property>
+                <property name="globalSessionTimeout" value="2419200000"></property> <!-- 4 weeks -->
+                <property name="sessionIdCookie">
+                    <bean class="org.apache.shiro.web.servlet.SimpleCookie">
+                        <property name="name" value="JSESSIONID"/>
+                        <property name="domain" value="138.68.101.177"/>
+                        <property name="path" value="/"/>
+                        <property name="secure" value="false"/>
+                    </bean>
+                </property>
+            </bean>
+        </property>
+        <property name="cacheManager">
+            <bean class="org.apache.shiro.cache.ehcache.EhCacheManager">
+                 <property name="cacheManagerConfigFile" value="classpath:org/apache/shiro/cache/ehcache/ehcache.xml" />
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+</beans>
